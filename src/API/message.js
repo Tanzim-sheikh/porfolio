@@ -1,43 +1,49 @@
 // src/api/message.js
-import express from 'express';
+
 import nodemailer from 'nodemailer';
 
-const router = express.Router();
+export default async function handler(req, res) {
+  // CORS Headers
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-router.post('/message', async (req, res) => {
-  const { name, email, message } = req.body;
-
-  try {
-    // 1. Transporter Setup (using Gmail)
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: 'tanzimsheikh68@gmail.com', // your Gmail
-        pass: "qsfy mpzs umct npno",        // NOT your Gmail password
-      },
-    });
-
-    // 2. Email Options
-    const mailOptions = {
-      from: email, // sender's email
-      to: 'tanzimsheikh68@gmail.com', // your email
-      subject: `New Message from ${name}`,
-      text: `
-        You got a new message:
-        Name: ${name}
-        Email: ${email}
-        Message: ${message}
-      `,
-    };
-
-    // 3. Send Email
-    await transporter.sendMail(mailOptions);
-
-    res.status(200).json({ message: 'Message sent to Tanzim Sheikh via Email!' });
-  } catch (error) {
-    console.error('Email send error:', error);
-    res.status(500).json({ error: 'Failed to send email.' });
+  // Preflight check for OPTIONS
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
   }
-});
 
-export default router;
+  if (req.method === "POST") {
+    const { name, email, message } = req.body;
+
+    try {
+      // Gmail Transport
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: 'tanzimsheikh68@gmail.com',
+          pass: 'qsfympzsumctnpno', // App password, no spaces
+        },
+      });
+
+      // Email config
+      const mailOptions = {
+        from: email,
+        to: 'tanzimsheikh68@gmail.com',
+        subject: `New message from ${name}`,
+        text: `You got a message:\n\nName: ${name}\nEmail: ${email}\n\n${message}`,
+      };
+
+      // Send email
+      await transporter.sendMail(mailOptions);
+
+      console.log("✅ Message sent successfully:", { name, email });
+      res.status(200).json({ message: "Message sent to Tanzim Sheikh!" });
+    } catch (error) {
+      console.error("❌ Error sending email:", error);
+      res.status(500).json({ error: "Failed to send email." });
+    }
+  } else {
+    res.status(405).json({ error: "Method not allowed" });
+  }
+}
